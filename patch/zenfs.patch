@@ -1,0 +1,43 @@
+diff --git a/fs/zbdlib_zenfs.cc b/fs/zbdlib_zenfs.cc
+index 2ad44e7..e72e57d 100644
+--- a/fs/zbdlib_zenfs.cc
++++ b/fs/zbdlib_zenfs.cc
+@@ -47,6 +47,7 @@ IOStatus ZbdlibBackend::CheckScheduler() {
+     return IOStatus::InvalidArgument("Failed to open " + path.str());
+   }
+ 
++  return IOStatus::OK();
+   std::string buf;
+   getline(f, buf);
+   if (buf.find("[mq-deadline]") == std::string::npos) {
+@@ -104,8 +105,18 @@ IOStatus ZbdlibBackend::Open(bool readonly, bool exclusive,
+   block_sz_ = info.pblock_size;
+   zone_sz_ = info.zone_size;
+   nr_zones_ = info.nr_zones;
+-  *max_active_zones = info.max_nr_active_zones;
+-  *max_open_zones = info.max_nr_open_zones;
++  // *max_active_zones = info.max_nr_active_zones;
++  // *max_open_zones = info.max_nr_open_zones;
++  *max_active_zones = info.max_nr_active_zones - 1;
++  *max_open_zones = info.max_nr_open_zones - 1;
++
++  fprintf(stdout, "Backing Device info. block_sz_: %u, zone_sz: %llu, nr_zones: %u, max_active_zones: %u, max_open_zones: %u\n",
++        info.pblock_size,
++        info.zone_size,
++        info.nr_zones,
++        info.max_nr_active_zones,
++        info.max_nr_open_zones
++        );
+   return IOStatus::OK();
+ }
+ 
+@@ -131,7 +142,9 @@ IOStatus ZbdlibBackend::Reset(uint64_t start, bool *offline,
+   struct zbd_zone z;
+   int ret;
+ 
++
+   ret = zbd_reset_zones(write_f_, start, zone_sz_);
++  // fprintf(stdout, "start: %lu, zone_sz_: %lu, ret: %d\n", start, zone_sz_, ret);
+   if (ret) return IOStatus::IOError("Zone reset failed\n");
+ 
+   ret = zbd_report_zones(read_f_, start, zone_sz_, ZBD_RO_ALL, &z, &report);

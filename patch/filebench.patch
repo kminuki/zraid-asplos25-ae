@@ -1,0 +1,155 @@
+diff --git a/fb_localfs.c b/fb_localfs.c
+index ae0075a..07dae91 100644
+--- a/fb_localfs.c
++++ b/fb_localfs.c
+@@ -330,6 +330,10 @@ fb_lfsflow_aiowrite(threadflow_t *threadflow, flowop_t *flowop)
+ 		    fdesc->fd_num, (u_longlong_t)iosize,
+ 		    (u_longlong_t)fileoffset);
+ 
++		// printf("aio fd=%d, bytes=%llu, offset=%llu",
++		//     fdesc->fd_num, (u_longlong_t)iosize,
++		//     (u_longlong_t)fileoffset);
++
+ 		flowop_beginop(threadflow, flowop);
+ 		if (aio_write64(aiocb) < 0) {
+ 			filebench_log(LOG_ERROR, "aiowrite failed: %s",
+@@ -442,6 +446,7 @@ fb_lfsflow_aiowait(threadflow_t *threadflow, flowop_t *flowop)
+ 			if ((aio_return64(&aio->al_aiocb) == -1) || result) {
+ 				filebench_log(LOG_ERROR, "aio failed: %s",
+ 				    strerror(result));
++				return (FILEBENCH_ERROR);
+ 				continue;
+ 			}
+ 
+diff --git a/flowop_library.c b/flowop_library.c
+index 7da8264..aaa594f 100644
+--- a/flowop_library.c
++++ b/flowop_library.c
+@@ -427,9 +427,10 @@
+ 	}
+ 
+ 	/* If directio, we need to align buffer address by sector */
+-	if (flowoplib_fileattrs(flowop) & FLOW_ATTR_DIRECTIO)
+-		iosize = iosize + 512;
+-
++	if (flowoplib_fileattrs(flowop) & FLOW_ATTR_DIRECTIO) {
++		iosize = iosize + 4096;
++	}
++	
+ 	if ((memsize = threadflow->tf_constmemsize) != 0) {
+ 		/* use tf_mem for I/O with random offset */
+ 
+@@ -465,8 +466,10 @@
+ 		*iobufp = flowop->fo_buf;
+ 	}
+ 
+-	if (flowoplib_fileattrs(flowop) & FLOW_ATTR_DIRECTIO)
+-		*iobufp = (caddr_t)((((unsigned long)(*iobufp) + 512) / 512) * 512);
++	if (flowoplib_fileattrs(flowop) & FLOW_ATTR_DIRECTIO) {
++		*iobufp = (caddr_t)((((unsigned long)(*iobufp) + 4096) / 4096) * 4096);
++		// printf("iobufp: %llu\n", (unsigned long)(*iobufp));
++	}
+ 
+ 	return (FILEBENCH_OK);
+ }
+@@ -537,15 +540,25 @@
+ 		/* select randomly */
+ 		fb_random64(&fileoffset, wss, iosize, NULL);
+ 
++		if (flowoplib_fileattrs(flowop) & FLOW_ATTR_DIRECTIO) {
++			int rem;
++			if (rem = fileoffset % 4096) {
++				fileoffset -= rem;
++			}
++			if (rem = iosize % 4096) {
++				iosize += 4096 - rem;
++			}
++		}
++
+ 		(void) flowop_beginop(threadflow, flowop);
+ 		if ((ret = FB_PREAD(fdesc, iobuf,
+ 		    iosize, (off64_t)fileoffset)) == -1) {
+ 			(void) flowop_endop(threadflow, flowop, 0);
+ 			filebench_log(LOG_ERROR,
+ 			    "read file %s failed, offset %llu "
+-			    "io buffer %zd: %s",
++			    "io buffer %zd,  iosize: %d, %s",
+ 			    avd_get_str(flowop->fo_fileset->fs_name),
+-			    (u_longlong_t)fileoffset, iobuf, strerror(errno));
++			    (u_longlong_t)fileoffset, iobuf, iosize, strerror(errno));
+ 			flowop_endop(threadflow, flowop, 0);
+ 			return (FILEBENCH_ERROR);
+ 		}
+@@ -559,9 +572,9 @@
+ 		if ((ret = FB_READ(fdesc, iobuf, iosize)) == -1) {
+ 			(void) flowop_endop(threadflow, flowop, 0);
+ 			filebench_log(LOG_ERROR,
+-			    "read file %s failed, io buffer %zd: %s",
++			    "read file %s failed, io buffer %zd, iosize: %d: %s",
+ 			    avd_get_str(flowop->fo_fileset->fs_name),
+-			    iobuf, strerror(errno));
++			    iobuf, iosize, strerror(errno));
+ 			(void) flowop_endop(threadflow, flowop, 0);
+ 			return (FILEBENCH_ERROR);
+ 		}
+@@ -2342,6 +2355,8 @@
+ 	int ret;
+ 	char zerowrtbuf;
+ 
++	// printf("flowoplib_writewholefile\n");
++
+ 	/* get the file to use */
+ 	if ((ret = flowoplib_filesetup(threadflow, flowop, &wss,
+ 	    &fdesc)) != FILEBENCH_OK)
+@@ -2377,10 +2392,16 @@
+ 		wss = file->fse_size;
+ 
+ 	wsize = (int)MIN(wss, iosize);
++	if (flowoplib_fileattrs(flowop) & FLOW_ATTR_DIRECTIO) {
++		int rem = wsize % 4096;
++		if (rem)
++			wsize = wsize + 4096 - rem;
++	}
+ 
+ 	/* Measure time to write bytes */
+ 	flowop_beginop(threadflow, flowop);
+ 	for (seek = 0; seek < wss; seek += wsize) {
++		// printf("fdesc: %d, wsize: %d, iobuf: %llu, offset: %d\n", fdesc->fd_num, wsize, iobuf, FB_LSEEK(fdesc, 0, SEEK_CUR));
+ 		ret = FB_WRITE(fdesc, iobuf, wsize);
+ 		if (ret != wsize) {
+ 			filebench_log(LOG_ERROR,
+@@ -2433,6 +2454,7 @@
+ 	/* Measure time to write bytes */
+ 	flowop_beginop(threadflow, flowop);
+ 	(void) FB_LSEEK(fdesc, 0, SEEK_END);
++		printf("append iosize: %d\n", iosize);
+ 	ret = FB_WRITE(fdesc, iobuf, iosize);
+ 	if (ret != iosize) {
+ 		filebench_log(LOG_ERROR,
+@@ -2480,6 +2502,7 @@
+ 
+ 	fb_random64(&appendsize, iosize, 1LL, NULL);
+ 
++
+ 	/* skip if attempting zero length append */
+ 	if (appendsize == 0) {
+ 		flowop_beginop(threadflow, flowop);
+@@ -2496,7 +2519,17 @@
+ 	/* Measure time to write bytes */
+ 	flowop_beginop(threadflow, flowop);
+ 
+-	(void) FB_LSEEK(fdesc, 0, SEEK_END);
++	if (flowoplib_fileattrs(flowop) & FLOW_ATTR_DIRECTIO) {
++		int rem = appendsize % 4096;
++		if (rem)
++			appendsize = appendsize + 4096 - rem;
++		if (rem = FB_LSEEK(fdesc, 0, SEEK_END) % 4096) {
++			FB_LSEEK(fdesc, -rem, SEEK_CUR);
++		}
++	}
++	else
++		(void) FB_LSEEK(fdesc, 0, SEEK_END);
++	// printf("appendrand fdesc: %d, iosize: %d, iobuf: %llu, offset: %d\n", fdesc->fd_num, iosize, (unsigned long)(iobuf), FB_LSEEK(fdesc, 0, SEEK_CUR));
+ 	ret = FB_WRITE(fdesc, iobuf, appendsize);
+ 	if (ret != appendsize) {
+ 		filebench_log(LOG_ERROR,
