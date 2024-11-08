@@ -186,7 +186,7 @@ if __name__ == "__main__":
     fail = 0
     wp_delta = 0
 
-    for rep in range(10):
+    for rep in range(100):
         lba_fail = False
         verify_fail = False
         print(f'REP {rep+1} running..')
