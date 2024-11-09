@@ -202,7 +202,7 @@ if __name__ == "__main__":
         run_ssh_command(qemu_ip, qemu_username, qemu_password, "./work.sh", False)
 
         # 4.
-        runtime = random.uniform(0.5, 30)
+        runtime = random.uniform(0.5, 20)
         print(f'Workload runtime: {runtime} (sec)')
         time.sleep(runtime)
         kill_qemu()
