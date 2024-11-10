@@ -171,7 +171,7 @@ if __name__ == "__main__":
         build_flag = '-DSTRIPE_BASED_REC'
     elif cons_policy == 'chunk':
         build_flag = ''
-    elif cons_policy == 'wd':
+    elif cons_policy == 'log':
         build_flag = '-DWRITE_BACK_CACHE'
 
     start_time = time.time()
