@@ -1,4 +1,4 @@
-### FIO Write Performance (Detailed)
+### FIO Write Performance (Normalized)
 Run the FIO benchmark, varying the number of open zones.
 - Open zones: [15]
 - Block sizes: [4k, 8k, 16k, 32k, 64k]

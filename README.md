@@ -4,7 +4,7 @@ This repository contains scripts for ASPLOS'25 artifact evaluation of the **ZRAI
 
 ### Evaluation instructions 
 
-Since ZRAID requires specific hardware and software dependencies, we have pre-configured an environment for the evaluators on our machine. Therefore, evaluators do not need to install the kernel or additional applications (please skip A.4 in the artifact appendix).
+Since ZRAID requires specific hardware and software dependencies, we have pre-configured an environment for the evaluators on our machine. Therefore, evaluators do not need to install the kernel or additional applications (please skip steps 2, 4, 5, and 6 in Section A.4 of the artifact appendix.).
 
 ### Accessing the evaluation environment
 

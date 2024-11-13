@@ -29,5 +29,5 @@ Flash WAF = (`pp_permanent` + `total_write_count` * 1.25) / `total_write_count`
 
 ### Directory Structure
 Generated files:
-- `result/` — Copies of `dmesg` output at the end of each workload run, e.g., `zraid_fillseq.dmesg`
+- `result/` — Contains copies of `dmesg` output at the end of each workload run, e.g., `zraid_fillseq.dmesg`.
 - `bck/` — If `result/` is not empty at the experiment's start, its contents are moved here.
