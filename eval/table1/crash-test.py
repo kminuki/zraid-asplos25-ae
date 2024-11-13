@@ -243,6 +243,8 @@ if __name__ == "__main__":
             print(f'REP {rep+1} success')
             success += 1
         print()
+
+        output = run_ssh_command(qemu_ip, qemu_username, qemu_password, f"./unset_raid.sh")
         kill_qemu()
     
     print(f'success: {success}, fail: {fail}')
