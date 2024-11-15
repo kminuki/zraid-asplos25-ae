@@ -24,7 +24,7 @@ cmd="sudo /home/csl/mwkim/qemu/build/qemu-system-x86_64 \
     -cpu host \
     -smp 40 \
     -nographic \
-    -serial file:/home/csl/mwkim/asplos-ae-zraid/eval/table1/qemu.log \
+    -serial file:../qemu.log \
     -netdev user,id=net0,hostfwd=tcp::2222-:22 \
     -device virtio-net-pci,netdev=net0 \
     -drive file=/mnt/sdb1/mwkim/qemu_img/jammy-server-cloudimg-amd64.img \

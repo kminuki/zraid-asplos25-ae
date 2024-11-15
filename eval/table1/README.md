@@ -3,7 +3,10 @@ Configure ZRAID and run a synthetic workload inside the QEMU, then forcibly exit
 - Consistency policies of ZRAID: [Stripe-based, Chunk-based, WP log]
 
 ### To Reproduce
-`python3 crash-test.py [policy_name]` → Automatically runs the whole work-crash-recovery process with 100 repetitions, outputs fail rate and data loss to syslog. 
+```
+pip3 install paramiko
+python3 crash-test.py [policy_name] # Automatically runs the whole work-crash-recovery process with 100 repetitions, outputs fail rate and data loss to syslog. 
+```
 Name of consistency policies is simplified: [stripe, chunk, log]
 Example command: `python3 crash-test.py stripe`
 

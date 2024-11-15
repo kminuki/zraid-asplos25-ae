@@ -81,7 +81,7 @@ def check_ssh_ready(hostname, username, password, max_retries=100, delay=5):
 
 def run_ssh_command(host, user, password, command, sync=True):
     try:
-        ssh_command = f"sshpass ssh -p 2222 -o StrictHostKeyChecking=no {user}@{host} '{command}'"
+        ssh_command = f"sshpass -p raizn ssh -p 2222 -o StrictHostKeyChecking=no {user}@{host} '{command}'"
         # os.system(ssh_command)
         if sync:
             result = subprocess.run(ssh_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)

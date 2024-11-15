@@ -52,7 +52,7 @@ Other setups will be handled automatically by the scripts (`run.py`) in each `ev
 ### Kernel boot parameters
 To optimize performance, kernel boot parameters can be modified in `/etc/default/grub`. On our test machine, the `GRUB_CMDLINE_LINUX` parameters listed below are already set. You only need to comment/uncomment the relevant lines as required. Please avoid altering any other parameters, as improper modifications may cause the system to fail to boot.
 
-For experiments on a native machine (Figures 7-11):
+For experiments on a native machine (Figures 7-11, claims):
 `GRUB_CMDLINE_LINUX="quite splash intel_pstate=disable intel_iommu=off intel_idle.max_cstate=0" # ASPLOS submit`       
 
 For experiments on QEMU (Table 1) with IOMMU enabled:
@@ -80,6 +80,14 @@ To reduce reproduction time, we have set the experiments to run once (instead of
 > 
 * **Figure 11**: ~7 minutes; 5 repetitions will require 35 minutes.
 > 
-* **Table1**: ~21hours 40minutes (for 100 repetition of 3 policies).
+* **Table1**: ~25hours 30minutes (for 100 repetition of 3 policies).
 >
 * **Claims validation**: ~50minutes.
+
+
+### Precautions
+- Recommended experiment sequence: It is advised to separate the **Table1** experiment from the others (the order does not matter). Modifying the kernel boot parameters is recommended when switching between experiments.
+
+- However, if the **Table1** experiment is mixed with others, ensure that the **Figure 11** experiment is conducted before **Table1**. If you need to run **Table1** before **Figure 11**, please reboot the machine beforehand. This is because QEMU with VFIO may occasionally cause issues with PM1731a-related scripts.
+
+- If you need to interrupt the **Table1** experiment midway, please run the `unvfio_zns.sh` script located in the `eval/table1/qemu-script` directory before proceeding with other experiments.
