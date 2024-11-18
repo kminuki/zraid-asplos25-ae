@@ -86,7 +86,9 @@ To reduce reproduction time, we have set the experiments to run once (instead of
 
 
 ### Precautions
-- Recommended experiment sequence: It is advised to separate the **Table1** experiment from the others (the order does not matter). Modifying the kernel boot parameters is recommended when switching between experiments.
+- Recommended experiment sequence: 
+  - Reboot is recommended before running **Figure 10** experiment. Unclean state can make performance anomaly in db_bench experiment.
+  - It is advised to separate the **Table1** experiment from the others (the order does not matter). Modifying the kernel boot parameters is recommended when switching between experiments.
 
 - However, if the **Table1** experiment is mixed with others, ensure that the **Figure 11** experiment is conducted before **Table1**. If you need to run **Table1** before **Figure 11**, please reboot the machine beforehand. This is because QEMU with VFIO may occasionally cause issues with PM1731a-related scripts.
 

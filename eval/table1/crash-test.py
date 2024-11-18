@@ -5,6 +5,29 @@ import os, sys
 import signal
 import random
 
+def find_ssh_agent():
+    try:
+        # Check if there's a running ssh-agent process
+        pid = subprocess.check_output(["pgrep", "-u", os.getenv("USER"), "ssh-agent"]).decode().strip()
+        # Find the SSH_AUTH_SOCK path
+        sock_path = subprocess.check_output("find /tmp/ -type s -name 'agent.*' 2>/dev/null", shell=True).decode().strip()
+        return pid, sock_path
+    except subprocess.CalledProcessError:
+        return None, None
+
+def start_ssh_agent():
+    output = subprocess.check_output("ssh-agent -s", shell=True).decode()
+    for line in output.splitlines():
+        if "SSH_AGENT_PID" in line:
+            pid = line.split("=")[1].strip(";")
+        if "SSH_AUTH_SOCK" in line:
+            sock_path = line.split("=")[1].strip(";")
+    return pid, sock_path
+
+def set_env_variable(key, value):
+    os.environ[key] = value
+    print(f"export {key}={value}")
+
 def set_vfio(qemu_directory):
     currdir = os.getcwd()
     os.chdir(qemu_directory)    
@@ -176,8 +199,19 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
-    # 0. set vfio
+    # 0. set ssh & vfio
+    pid, sock_path = find_ssh_agent()
+    if pid and sock_path:
+        print(f"Reusing existing ssh-agent with PID {pid}")
+    else:
+        print("Starting a new ssh-agent...")
+        pid, sock_path = start_ssh_agent()
+    
+    set_env_variable("SSH_AGENT_PID", pid)
+    set_env_variable("SSH_AUTH_SOCK", sock_path)
+
     set_vfio(qemu_directory)
+
 
     # 1. QEMU 강제 종료
     kill_qemu()
